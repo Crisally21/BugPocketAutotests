@@ -5,6 +5,7 @@ import io.restassured.specification.RequestSpecification;
 
 import java.util.Map;
 
+import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 
 
@@ -25,6 +26,14 @@ public class BugApi {
                 ))
                 .when()
                 .post("/api/bugs");
+    }
+
+    public Response getBugById(int bugId) {
+        return given()
+                .spec(requestSpecification)
+                .pathParam("bugId", bugId)
+                .when()
+                .get("/api/bugs/{bugId}");
     }
 
 }

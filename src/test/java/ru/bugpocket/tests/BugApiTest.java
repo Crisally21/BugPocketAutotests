@@ -108,17 +108,13 @@ class BugApiTest {
                 .extract()
                 .jsonPath()
                 .getInt("id");
-        given()
-                .spec(requestSpec)
-                .pathParam("id", bugId)
-                .when()
-                .get("/api/bugs/{id}")
-                .then()
-                .statusCode(200)
-                .body("header", equalTo("Не работает кнопка сохранения"))
-                .body("id", equalTo(bugId))
-                .body("priority", equalTo("HIGH"))
-                .body("status", equalTo("NEW"));
+        bugApi.getBugById(bugId)
+              .then()
+              .statusCode(200)
+              .body("header", equalTo("Не работает кнопка сохранения"))
+              .body("id", equalTo(bugId))
+              .body("priority", equalTo("HIGH"))
+              .body("status", equalTo("NEW"));
     }
 
     @Test
