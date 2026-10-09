@@ -92,22 +92,7 @@ class BugApiTest {
 
     @Test
     void shouldReturnCreatedBugById() {
-        int bugId = given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body("""
-                              {
-                              "header": "Не работает кнопка сохранения",
-                              "priority": "HIGH"
-                              }
-                              """)
-                .when()
-                .post("/api/bugs")
-                .then()
-                .statusCode(201)
-                .extract()
-                .jsonPath()
-                .getInt("id");
+        int bugId = createBug("Не работает кнопка сохранения", "HIGH");
         bugApi.getBugById(bugId)
               .then()
               .statusCode(200)

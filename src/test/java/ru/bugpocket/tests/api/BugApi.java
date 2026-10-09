@@ -5,7 +5,6 @@ import io.restassured.specification.RequestSpecification;
 
 import java.util.Map;
 
-import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 
 
