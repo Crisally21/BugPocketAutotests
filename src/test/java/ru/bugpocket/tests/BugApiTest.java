@@ -56,9 +56,9 @@ class BugApiTest {
     @Test
     void shouldValidationCreateBug() {
         bugApi.createBug("", "HIGH")
-                .then()
-                .statusCode(400)
-                .body("errors.header", notNullValue());
+              .then()
+              .statusCode(400)
+              .body("errors.header", notNullValue());
     }
 
     @Test
@@ -81,23 +81,13 @@ class BugApiTest {
 
     @Test
     void shouldCreateBugWithValidData() {
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body("""
-                              {
-                              "header": "Не работает кнопка сохранения",
-                              "priority": "HIGH"
-                              }
-                              """)
-                .when()
-                .post("/api/bugs")
-                .then()
-                .statusCode(201)
-                .body("header", equalTo("Не работает кнопка сохранения"))
-                .body("id", greaterThan(0))
-                .body("priority", equalTo("HIGH"))
-                .body("status", equalTo("NEW"));
+        bugApi.createBug("Не работает кнопка сохранения", "HIGH")
+              .then()
+              .statusCode(201)
+              .body("header", equalTo("Не работает кнопка сохранения"))
+              .body("id", greaterThan(0))
+              .body("priority", equalTo("HIGH"))
+              .body("status", equalTo("NEW"));
     }
 
     @Test
@@ -809,15 +799,15 @@ class BugApiTest {
 
     private int createBug(String header, String priority) {
         return bugApi.createBug(header, priority)
-                      .then()
-                      .statusCode(201)
-                      .body("id", greaterThan(0))
-                      .body("header", equalTo(header))
-                      .body("priority", equalTo(priority))
-                      .body("status", equalTo("NEW"))
-                      .extract()
-                      .jsonPath()
-                      .getInt("id");
+                     .then()
+                     .statusCode(201)
+                     .body("id", greaterThan(0))
+                     .body("header", equalTo(header))
+                     .body("priority", equalTo(priority))
+                     .body("status", equalTo("NEW"))
+                     .extract()
+                     .jsonPath()
+                     .getInt("id");
     }
 
     private void changeBugStatus(int bugId, String status) {
