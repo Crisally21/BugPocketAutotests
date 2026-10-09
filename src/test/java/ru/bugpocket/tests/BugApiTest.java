@@ -13,11 +13,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import ru.bugpocket.tests.api.BugApi;
 import ru.bugpocket.tests.config.TestConfig;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StreamCorruptedException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BugApiTest {
     private RequestSpecification requestSpec;
+    private BugApi bugApi;
 
     @Test
     void shouldReturnBugList() {
@@ -817,25 +818,16 @@ class BugApiTest {
 
 
     private int createBug(String header, String priority) {
-        return
-                given()
-                        .spec(requestSpec)
-                        .contentType("application/json")
-                        .body(Map.of(
-                                "header", header,
-                                "priority", priority
-                        ))
-                        .when()
-                        .post("/api/bugs")
-                        .then()
-                        .statusCode(201)
-                        .body("id", greaterThan(0))
-                        .body("header", equalTo(header))
-                        .body("priority", equalTo(priority))
-                        .body("status", equalTo("NEW"))
-                        .extract()
-                        .jsonPath()
-                        .getInt("id");
+        return bugApi.createBug(header, priority)
+                      .then()
+                      .statusCode(201)
+                      .body("id", greaterThan(0))
+                      .body("header", equalTo(header))
+                      .body("priority", equalTo(priority))
+                      .body("status", equalTo("NEW"))
+                      .extract()
+                      .jsonPath()
+                      .getInt("id");
     }
 
     private void changeBugStatus(int bugId, String status) {
@@ -878,5 +870,6 @@ class BugApiTest {
                                             .logConfig(LogConfig.logConfig()
                                                                 .enableLoggingOfRequestAndResponseIfValidationFails()))
                 .build();
+        bugApi = new BugApi(requestSpec);
     }
 }
