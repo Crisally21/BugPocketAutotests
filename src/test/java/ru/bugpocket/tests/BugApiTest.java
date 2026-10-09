@@ -55,17 +55,7 @@ class BugApiTest {
 
     @Test
     void shouldValidationCreateBug() {
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body("""
-                              {
-                                "header": "",
-                                "priority": "HIGH"
-                              }
-                              """)
-                .when()
-                .post("/api/bugs")
+        bugApi.createBug("", "HIGH")
                 .then()
                 .statusCode(400)
                 .body("errors.header", notNullValue());
