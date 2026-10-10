@@ -390,12 +390,7 @@ class BugApiTest {
         assertTrue(file.isFile(), "Не найден файл: " + file.getAbsolutePath());
 
         int bugId = createBug("Баг с txt вложением", "LOW");
-        given()
-                .spec(requestSpec)
-                .multiPart("files", file, "text/plain")
-                .pathParam("bugId", bugId)
-                .when()
-                .post("/api/bugs/{bugId}/attachments")
+        attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .log().body()
                 .statusCode(200)
