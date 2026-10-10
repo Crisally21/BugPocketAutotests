@@ -138,19 +138,11 @@ class BugApiTest {
     void shouldUpdateBugFieldAndKeepStatus() {
         int bugId = createBug("Не работает кнопка сохранения", "HIGH");
         changeBugStatus(bugId, "IN_PROGRESS");
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .pathParam("id", bugId)
-                .body("""
-                              {
-                              "header": "Кнопка сохранения выдает ошибку",
-                              "priority": "LOW",
-                              "expectedResult": "Изменения успешно сохранены"
-                              }
-                              """)
-                .when()
-                .put("/api/bugs/{id}")
+        bugApi.updateBug(bugId, Map.of(
+                "header", "Кнопка сохранения выдает ошибку",
+                "priority", "LOW",
+                "expectedResult", "Изменения успешно сохранены"
+        ))
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(bugId))

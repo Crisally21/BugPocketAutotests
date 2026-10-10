@@ -64,4 +64,14 @@ public class BugApi {
                 .get("/api/bugs");
     }
 
+    public Response updateBug(int bugId, Map<String, Object> body) {
+        return given()
+                .spec(requestSpecification)
+                .contentType("application/json")
+                .pathParam("bugId", bugId)
+                .body(body)
+                .when()
+                .put("/api/bugs/{bugId}");
+    }
+
 }
