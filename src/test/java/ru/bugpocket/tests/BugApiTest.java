@@ -143,47 +143,18 @@ class BugApiTest {
 
     @Test
     void shouldRejectInvalidStatusAndKeepBugUnchanged() {
-        int bugId = given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body("""
-                              {
-                              "header": "Не работает кнопка сохранения",
-                              "priority": "HIGH"
-                              }
-                              """)
-                .when()
-                .post("/api/bugs")
-                .then()
-                .statusCode(201)
-                .body("status", equalTo("NEW"))
-                .extract()
-                .jsonPath()
-                .getInt("id");
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .pathParam("id", bugId)
-                .body("""
-                              {
-                              "status": "UNKNOWN"
-                              }
-                              """)
-                .when()
-                .patch("/api/bugs/{id}/status")
-                .then()
-                .statusCode(400);
-        given()
-                .spec(requestSpec)
-                .pathParam("id", bugId)
-                .when()
-                .get("/api/bugs/{id}")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(bugId))
-                .body("status", equalTo("NEW"))
-                .body("header", equalTo("Не работает кнопка сохранения"))
-                .body("priority", equalTo("HIGH"));
+        int bugId =
+                createBug("Не работает кнопка сохранения", "HIGH");
+        bugApi.changeBugStatus(bugId, "UNKNOWN")
+              .then()
+              .statusCode(400);
+        bugApi.getBugById(bugId)
+              .then()
+              .statusCode(200)
+              .body("id", equalTo(bugId))
+              .body("status", equalTo("NEW"))
+              .body("header", equalTo("Не работает кнопка сохранения"))
+              .body("priority", equalTo("HIGH"));
     }
 
     @Test
