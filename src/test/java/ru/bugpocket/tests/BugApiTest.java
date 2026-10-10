@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
@@ -211,11 +212,7 @@ class BugApiTest {
     @EnumSource(Priority.class)
     void shouldFilterBugsByPriority(Priority priority) {
         int bugId = createBug("Новый баг", priority.name());
-        given()
-                .spec(requestSpec)
-                .queryParam("priority", priority.name())
-                .when()
-                .get("/api/bugs")
+        bugApi.getBugs(Map.of("priority", priority.name()))
                 .then()
                 .statusCode(200)
                 .body("priority", everyItem(equalTo(priority.name())))
@@ -234,12 +231,7 @@ class BugApiTest {
         if (!status.equals("NEW")) {
             changeBugStatus(bugId, status);
         }
-        given()
-                .spec(requestSpec)
-                .queryParam("priority", priority)
-                .queryParam("status", status)
-                .when()
-                .get("/api/bugs")
+        bugApi.getBugs(Map.of("priority", priority, "status", status))
                 .then()
                 .statusCode(200)
                 .body("priority", everyItem(equalTo(priority)))

@@ -56,4 +56,12 @@ public class BugApi {
                 .get("/api/bugs");
     }
 
+    public Response getBugs(Map<String, String> filters) {
+        return given()
+                .spec(requestSpecification)
+                .queryParams(filters)
+                .when()
+                .get("/api/bugs");
+    }
+
 }
