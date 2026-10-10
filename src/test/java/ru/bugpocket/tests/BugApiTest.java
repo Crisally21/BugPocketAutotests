@@ -122,12 +122,12 @@ class BugApiTest {
                 .getInt("id");
         bugApi.changeBugStatus(bugId, "IN_PROGRESS")
 
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(bugId))
-                .body("status", equalTo("IN_PROGRESS"))
-                .body("header", equalTo("Не работает кнопка сохранения"))
-                .body("priority", equalTo("HIGH"));
+              .then()
+              .statusCode(200)
+              .body("id", equalTo(bugId))
+              .body("status", equalTo("IN_PROGRESS"))
+              .body("header", equalTo("Не работает кнопка сохранения"))
+              .body("priority", equalTo("HIGH"));
         given()
                 .spec(requestSpec)
                 .pathParam("id", bugId)
@@ -783,19 +783,11 @@ class BugApiTest {
     }
 
     private void changeBugStatus(int bugId, String status) {
-        given()
-                .spec(requestSpec)
-                .pathParam("id", bugId)
-                .contentType("application/json")
-                .body(Map.of(
-                        "status", status
-                ))
-                .when()
-                .patch("/api/bugs/{id}/status")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(bugId))
-                .body("status", equalTo(status));
+        bugApi.changeBugStatus(bugId, status)
+              .then()
+              .statusCode(200)
+              .body("id", equalTo(bugId))
+              .body("status", equalTo(status));
     }
 
     static Stream<Arguments> invalidAttachments() {
