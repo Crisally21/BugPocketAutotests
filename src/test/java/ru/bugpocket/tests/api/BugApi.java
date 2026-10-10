@@ -16,15 +16,10 @@ public class BugApi {
     }
 
     public Response createBug(String header, String priority) {
-        return given()
-                .spec(requestSpecification)
-                .contentType("application/json")
-                .body(Map.of(
-                        "header", header,
-                        "priority", priority
-                ))
-                .when()
-                .post("/api/bugs");
+        return createBug(Map.of(
+                "header", header,
+                "priority", priority
+        ));
     }
 
     public Response getBugById(int bugId) {
