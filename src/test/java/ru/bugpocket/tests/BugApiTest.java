@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
@@ -106,7 +105,6 @@ class BugApiTest {
     void shouldChangeBugStatusToInProgress() {
         int bugId = createBug("Не работает кнопка сохранения", "HIGH");
         bugApi.changeBugStatus(bugId, "IN_PROGRESS")
-
               .then()
               .statusCode(200)
               .body("id", equalTo(bugId))
@@ -140,37 +138,8 @@ class BugApiTest {
 
     @Test
     void shouldUpdateBugFieldAndKeepStatus() {
-        int bugId = given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body("""
-                              {
-                              "header": "Не работает кнопка сохранения",
-                              "priority": "HIGH"
-                              }
-                              """)
-                .when()
-                .post("/api/bugs")
-                .then()
-                .statusCode(201)
-                .body("status", equalTo("NEW"))
-                .extract()
-                .jsonPath()
-                .getInt("id");
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .pathParam("id", bugId)
-                .body("""
-                              {
-                              "status": "IN_PROGRESS"
-                              }
-                              """)
-                .when()
-                .patch("/api/bugs/{id}/status")
-                .then()
-                .statusCode(200)
-                .body("status", equalTo("IN_PROGRESS"));
+        int bugId = createBug("Не работает кнопка сохранения", "HIGH");
+        changeBugStatus(bugId, "IN_PROGRESS");
         given()
                 .spec(requestSpec)
                 .contentType("application/json")
@@ -191,11 +160,7 @@ class BugApiTest {
                 .body("priority", equalTo("LOW"))
                 .body("expectedResult", equalTo("Изменения успешно сохранены"))
                 .body("status", equalTo("IN_PROGRESS"));
-        given()
-                .spec(requestSpec)
-                .pathParam("id", bugId)
-                .when()
-                .get("/api/bugs/{id}")
+        bugApi.getBugById(bugId)
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(bugId))
@@ -208,15 +173,7 @@ class BugApiTest {
     @ParameterizedTest
     @ValueSource(strings = {"", " ", "   ", "\t", "\n"})
     void shouldRejectBlankHeader(String header) {
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body(Map.of(
-                        "header", header,
-                        "priority", "HIGH"
-                ))
-                .when()
-                .post("/api/bugs")
+        bugApi.createBug(header, "HIGH")
                 .then()
                 .statusCode(400)
                 .body("errors.header", notNullValue());
@@ -230,19 +187,7 @@ class BugApiTest {
     })
     void shouldValidateHeaderLength(int length, int expectedStatus) {
         String header = "A".repeat(length);
-        var response = given()
-                .baseUri("http://206.223.240.7:8080/")
-                .accept("application/json")
-                .contentType("application/json")
-                .body("""
-                              {
-                              "header": "%s",
-                              "priority": "HIGH"
-                              }
-                              """.formatted(header)
-                )
-                .when()
-                .post("/api/bugs")
+        var response = bugApi.createBug(header, "HIGH")
                 .then()
                 .statusCode(expectedStatus);
         if (expectedStatus == 201) {
@@ -256,15 +201,7 @@ class BugApiTest {
     @EnumSource(Priority.class)
     void shouldCreateBugWithEachPriority(Priority priority) {
         String header = "Баг с приоритетом " + priority.name();
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body(Map.of(
-                        "header", header,
-                        "priority", priority.name()
-                ))
-                .when()
-                .post("/api/bugs")
+        bugApi.createBug(header, priority.name())
                 .then()
                 .statusCode(201)
                 .body("id", greaterThan(0))
@@ -276,21 +213,7 @@ class BugApiTest {
     @ParameterizedTest
     @EnumSource(Priority.class)
     void shouldFilterBugsByPriority(Priority priority) {
-        int bugId =
-                given()
-                        .spec(requestSpec)
-                        .contentType("application/json")
-                        .body(Map.of(
-                                "header", "Новый баг",
-                                "priority", priority.name()
-                        ))
-                        .when()
-                        .post("/api/bugs")
-                        .then()
-                        .statusCode(201)
-                        .extract()
-                        .jsonPath()
-                        .getInt("id");
+        int bugId = createBug("Новый баг", priority.name());
         given()
                 .spec(requestSpec)
                 .queryParam("priority", priority.name())
@@ -329,15 +252,7 @@ class BugApiTest {
 
     @Test
     void shouldReturnLocationOfCreatedBug() {
-        var response = given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body(Map.of(
-                        "header", "new bug",
-                        "priority", "HIGH"
-                ))
-                .when()
-                .post("/api/bugs")
+        var response = bugApi.createBug("new bug", "HIGH")
                 .then()
                 .statusCode(201)
                 .body("id", greaterThan(0))
