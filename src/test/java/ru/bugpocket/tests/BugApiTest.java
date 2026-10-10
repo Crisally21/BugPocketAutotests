@@ -255,12 +255,7 @@ class BugApiTest {
         File file = new File("src/test/resources/Screenshot_6.png");
         assertTrue(file.isFile(), "Не найден PNG-файл: " + file.getAbsolutePath());
         int bugId = createBug("Баг со скриншотом", "HIGH");
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .multiPart("files", file, "image/png")
-                .when()
-                .post("/api/bugs/{bugId}/attachments")
+        attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .statusCode(200);
         int attachmentId = attachmentApi.getAttachments(bugId)
@@ -292,12 +287,7 @@ class BugApiTest {
         File file = new File("src/test/resources/Screenshot_6.png");
         assertTrue(file.isFile(), "Не найден PNG-файл: " + file.getAbsolutePath());
         int bugId = createBug("Баг на PNG", "LOW");
-        given()
-                .spec(requestSpec)
-                .multiPart("files", file, "image/png")
-                .pathParam("bugId", bugId)
-                .when()
-                .post("/api/bugs/{bugId}/attachments")
+        attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .statusCode(200);
         int attachmentId = attachmentApi.getAttachments(bugId)
@@ -327,12 +317,7 @@ class BugApiTest {
         assertTrue(file.isFile(), "Не найден PNG-файл: " + file.getAbsolutePath());
         int ownerBugId = createBug("Баг с вложением", "HIGH");
         int anotherBugId = createBug("Баг без вложения", "LOW");
-        given()
-                .spec(requestSpec)
-                .multiPart("files", file, "image/png")
-                .pathParam("bugId", ownerBugId)
-                .when()
-                .post("/api/bugs/{bugId}/attachments")
+        attachmentApi.uploadAttachment(ownerBugId, file)
                 .then()
                 .statusCode(200);
         int attachmentId = attachmentApi.getAttachments(ownerBugId)
@@ -404,12 +389,7 @@ class BugApiTest {
         File file = new File("src/test/resources/unsupportedCsv.csv");
         assertTrue(file.isFile(), "Не найден файл: " + file.getAbsolutePath());
         int bugId = createBug("Баг с недопустимым вложением", "LOW");
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .multiPart("files", file, "text/csv")
-                .when()
-                .post("api/bugs/{bugId}/attachments")
+        attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .statusCode(200)
                 .log().body()
@@ -431,12 +411,7 @@ class BugApiTest {
         assertTrue(file.isFile(), "Не найден файл: " + file.getAbsolutePath());
         assertEquals(0L, file.length(), "Файл должен быть пустым");
         int bugId = createBug("Баг с пустым txt", "HIGH");
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .multiPart("files", file, "text/plain")
-                .when()
-                .post("/api/bugs/{bugId}/attachments")
+        attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .statusCode(200)
                 .body("accepted.size()", equalTo(0))
@@ -458,13 +433,7 @@ class BugApiTest {
                    "Не найден файл: " + unsupported.getAbsolutePath());
         assertTrue(unsupported.length() > 0, "CSV не должен быть пустым");
         int bugId = createBug("Баг с поддерживаем и не поддерживаем файлом", "HIGH");
-        var response = given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .multiPart("files", image, "image/png")
-                .multiPart("files", unsupported, "text/csv")
-                .when()
-                .post("/api/bugs/{bugId}/attachments")
+        var response = attachmentApi.uploadAttachments(bugId, image, unsupported)
                 .then()
                 .statusCode(200)
                 .body("accepted.size()", equalTo(1))
