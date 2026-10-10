@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import ru.bugpocket.tests.api.BugApi;
+import ru.bugpocket.tests.api.AttachmentApi;
 import ru.bugpocket.tests.config.TestConfig;
 
 import java.io.File;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BugApiTest {
     private RequestSpecification requestSpec;
     private BugApi bugApi;
+    private AttachmentApi attachmentApi;
 
     @Test
     void shouldReturnBugList() {
@@ -261,11 +263,7 @@ class BugApiTest {
                 .post("/api/bugs/{bugId}/attachments")
                 .then()
                 .statusCode(200);
-        int attachmentId = given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        int attachmentId = attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(1))
@@ -308,11 +306,7 @@ class BugApiTest {
                 .post("/api/bugs/{bugId}/attachments")
                 .then()
                 .statusCode(200);
-        int attachmentId = given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        int attachmentId = attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(1))
@@ -327,11 +321,7 @@ class BugApiTest {
                 .delete("/api/bugs/{bugId}/attachments/{attachmentId}")
                 .then()
                 .statusCode(204);
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(0));
@@ -361,11 +351,7 @@ class BugApiTest {
                 .post("/api/bugs/{bugId}/attachments")
                 .then()
                 .statusCode(200);
-        int attachmentId = given()
-                .spec(requestSpec)
-                .pathParam("bugId", ownerBugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        int attachmentId = attachmentApi.getAttachments(ownerBugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(1))
@@ -388,11 +374,7 @@ class BugApiTest {
                 .delete("/api/bugs/{bugId}/attachments/{attachmentId}")
                 .then()
                 .statusCode(404);
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", ownerBugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        attachmentApi.getAttachments(ownerBugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(1))
@@ -413,11 +395,7 @@ class BugApiTest {
                 .post("/api/bugs/{bugId}/attachments")
                 .then()
                 .statusCode(200);
-        var response = given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        var response = attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(2))
@@ -451,11 +429,7 @@ class BugApiTest {
                 .body("accepted[0].originalFilename", equalTo(file.getName()))
                 .body("accepted[0].fileType", equalTo("TXT"))
                 .body("errors.size()", equalTo(0));
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(1))
@@ -482,11 +456,7 @@ class BugApiTest {
                 .body("errors.size()", equalTo(1))
                 .body("errors[0].filename", equalTo(file.getName()))
                 .body("errors[0].message", not(emptyOrNullString()));
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(0));
@@ -510,11 +480,7 @@ class BugApiTest {
                 .body("errors.size()", equalTo(1))
                 .body("errors[0].filename", equalTo(file.getName()))
                 .body("errors[0].message", equalTo("Файл пустой"));
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(0));
@@ -548,11 +514,7 @@ class BugApiTest {
                 .extract()
                 .response();
         int attachmentId = response.jsonPath().getInt("accepted[0].id");
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(1))
@@ -597,11 +559,7 @@ class BugApiTest {
             response.body("errors[0].message", not(emptyOrNullString()));
         }
 
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments")
+        attachmentApi.getAttachments(bugId)
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(0));
@@ -654,5 +612,6 @@ class BugApiTest {
                                                                 .enableLoggingOfRequestAndResponseIfValidationFails()))
                 .build();
         bugApi = new BugApi(requestSpec);
+        attachmentApi = new AttachmentApi(requestSpec);
     }
 }
