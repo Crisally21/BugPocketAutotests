@@ -5,6 +5,7 @@ import io.restassured.specification.RequestSpecification;
 
 
 import java.io.File;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 
@@ -59,6 +60,15 @@ public class AttachmentApi {
             request = request.multiPart("files", file);
         }
         return request
+                .when()
+                .post("/api/bugs/{bugId}/attachments");
+    }
+
+    public Response uploadAttachment(int bugId, File file, String contentType) {
+        return given()
+                .spec(requestSpecification)
+                .pathParam("bugId", bugId)
+                .multiPart("files", file, contentType)
                 .when()
                 .post("/api/bugs/{bugId}/attachments");
     }

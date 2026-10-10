@@ -473,12 +473,7 @@ class BugApiTest {
 
         int bugId = createBug("Баг с недопустимым вложением", "HIGH");
 
-        var response = given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .multiPart("files", file, contentType)
-                .when()
-                .post("/api/bugs/{bugId}/attachments")
+        var response = attachmentApi.uploadAttachment(bugId, file, contentType)
                 .then()
                 .statusCode(200)
                 .body("accepted.size()", equalTo(0))
