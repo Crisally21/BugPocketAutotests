@@ -49,4 +49,17 @@ public class AttachmentApi {
                 .multiPart("files", file)
                 .post("/api/bugs/{bugId}/attachments");
     }
+
+    public Response uploadAttachments(int bugId, File... files) {
+        RequestSpecification request = given()
+                .spec(requestSpecification)
+                .pathParam("bugId", bugId);
+
+        for (File file : files) {
+            request = request.multiPart("files", file);
+        }
+        return request
+                .when()
+                .post("/api/bugs/{bugId}/attachments");
+    }
 }

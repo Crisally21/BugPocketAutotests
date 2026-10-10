@@ -360,13 +360,7 @@ class BugApiTest {
         File file = new File("src/test/resources/Screenshot_6.png");
         assertTrue(file.isFile(), "Не найден PNG-файл: " + file.getAbsolutePath());
         int bugId = createBug("Баг с двумя вложением", "HIGH");
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .multiPart("files", file, "image/png")
-                .multiPart("files", file, "image/png")
-                .when()
-                .post("/api/bugs/{bugId}/attachments")
+        attachmentApi.uploadAttachments(bugId, file, file)
                 .then()
                 .statusCode(200);
         var response = attachmentApi.getAttachments(bugId)
