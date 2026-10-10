@@ -104,22 +104,7 @@ class BugApiTest {
 
     @Test
     void shouldChangeBugStatusToInProgress() {
-        int bugId = given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body("""
-                              {
-                              "header": "Не работает кнопка сохранения",
-                              "priority": "HIGH"
-                              }
-                              """)
-                .when()
-                .post("/api/bugs")
-                .then()
-                .statusCode(201)
-                .extract()
-                .jsonPath()
-                .getInt("id");
+        int bugId = createBug("Не работает кнопка сохранения", "HIGH");
         bugApi.changeBugStatus(bugId, "IN_PROGRESS")
 
               .then()
@@ -128,17 +113,13 @@ class BugApiTest {
               .body("status", equalTo("IN_PROGRESS"))
               .body("header", equalTo("Не работает кнопка сохранения"))
               .body("priority", equalTo("HIGH"));
-        given()
-                .spec(requestSpec)
-                .pathParam("id", bugId)
-                .when()
-                .get("/api/bugs/{id}")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(bugId))
-                .body("status", equalTo("IN_PROGRESS"))
-                .body("header", equalTo("Не работает кнопка сохранения"))
-                .body("priority", equalTo("HIGH"));
+        bugApi.getBugById(bugId)
+              .then()
+              .statusCode(200)
+              .body("id", equalTo(bugId))
+              .body("status", equalTo("IN_PROGRESS"))
+              .body("header", equalTo("Не работает кнопка сохранения"))
+              .body("priority", equalTo("HIGH"));
     }
 
     @Test
