@@ -1,9 +1,6 @@
 package ru.bugpocket.tests;
 
 
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.config.LogConfig;
-import io.restassured.config.RestAssuredConfig;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +12,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import ru.bugpocket.tests.api.BugApi;
 import ru.bugpocket.tests.api.AttachmentApi;
-import ru.bugpocket.tests.config.TestConfig;
+import ru.bugpocket.tests.config.RequestSpecFactory;
+import ru.bugpocket.tests.support.BugFixtures;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +40,7 @@ class BugApiTest {
     private RequestSpecification requestSpec;
     private BugApi bugApi;
     private AttachmentApi attachmentApi;
+    private BugFixtures bugFixtures;
 
     @Test
     void shouldReturnBugList() {
@@ -82,7 +81,7 @@ class BugApiTest {
 
     @Test
     void shouldReturnCreatedBugById() {
-        int bugId = createBug("Не работает кнопка сохранения", "HIGH");
+        int bugId = bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
         bugApi.getBugById(bugId)
               .then()
               .statusCode(200)
@@ -94,7 +93,7 @@ class BugApiTest {
 
     @Test
     void shouldChangeBugStatusToInProgress() {
-        int bugId = createBug("Не работает кнопка сохранения", "HIGH");
+        int bugId = bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
         bugApi.changeBugStatus(bugId, "IN_PROGRESS")
               .then()
               .statusCode(200)
@@ -114,7 +113,7 @@ class BugApiTest {
     @Test
     void shouldRejectInvalidStatusAndKeepBugUnchanged() {
         int bugId =
-                createBug("Не работает кнопка сохранения", "HIGH");
+                bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
         bugApi.changeBugStatus(bugId, "UNKNOWN")
               .then()
               .statusCode(400);
@@ -129,8 +128,8 @@ class BugApiTest {
 
     @Test
     void shouldUpdateBugFieldAndKeepStatus() {
-        int bugId = createBug("Не работает кнопка сохранения", "HIGH");
-        changeBugStatus(bugId, "IN_PROGRESS");
+        int bugId = bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
+        bugFixtures.changeBugStatus(bugId, "IN_PROGRESS");
         bugApi.updateBug(bugId, Map.of(
                 "header", "Кнопка сохранения выдает ошибку",
                 "priority", "LOW",
@@ -196,7 +195,7 @@ class BugApiTest {
     @ParameterizedTest
     @EnumSource(Priority.class)
     void shouldFilterBugsByPriority(Priority priority) {
-        int bugId = createBug("Новый баг", priority.name());
+        int bugId = bugFixtures.createBug("Новый баг", priority.name());
         bugApi.getBugs(Map.of("priority", priority.name()))
                 .then()
                 .statusCode(200)
@@ -212,9 +211,9 @@ class BugApiTest {
             "HIGH, FIXED"
     })
     void shouldFilterBugsByPriorityAndStatus(String priority, String status) {
-        int bugId = createBug("Баг для проверки двух фильтров", priority);
+        int bugId = bugFixtures.createBug("Баг для проверки двух фильтров", priority);
         if (!status.equals("NEW")) {
-            changeBugStatus(bugId, status);
+            bugFixtures.changeBugStatus(bugId, status);
         }
         bugApi.getBugs(Map.of("priority", priority, "status", status))
                 .then()
@@ -254,7 +253,7 @@ class BugApiTest {
     void shouldUploadAndDownloadPngWithoutChanges() throws IOException {
         File file = new File("src/test/resources/Screenshot_6.png");
         assertTrue(file.isFile(), "Не найден PNG-файл: " + file.getAbsolutePath());
-        int bugId = createBug("Баг со скриншотом", "HIGH");
+        int bugId = bugFixtures.createBug("Баг со скриншотом", "HIGH");
         attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .statusCode(200);
@@ -286,7 +285,7 @@ class BugApiTest {
     void shouldDeleteAttachmentAndMakeItUnavailable() {
         File file = new File("src/test/resources/Screenshot_6.png");
         assertTrue(file.isFile(), "Не найден PNG-файл: " + file.getAbsolutePath());
-        int bugId = createBug("Баг на PNG", "LOW");
+        int bugId = bugFixtures.createBug("Баг на PNG", "LOW");
         attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .statusCode(200);
@@ -315,8 +314,8 @@ class BugApiTest {
     void shouldRejectAttachmentAccessThroughAnotherBug() {
         File file = new File("src/test/resources/Screenshot_6.png");
         assertTrue(file.isFile(), "Не найден PNG-файл: " + file.getAbsolutePath());
-        int ownerBugId = createBug("Баг с вложением", "HIGH");
-        int anotherBugId = createBug("Баг без вложения", "LOW");
+        int ownerBugId = bugFixtures.createBug("Баг с вложением", "HIGH");
+        int anotherBugId = bugFixtures.createBug("Баг без вложения", "LOW");
         attachmentApi.uploadAttachment(ownerBugId, file)
                 .then()
                 .statusCode(200);
@@ -344,7 +343,7 @@ class BugApiTest {
     void shouldUploadTwoAttachmentsInOneRequest() {
         File file = new File("src/test/resources/Screenshot_6.png");
         assertTrue(file.isFile(), "Не найден PNG-файл: " + file.getAbsolutePath());
-        int bugId = createBug("Баг с двумя вложением", "HIGH");
+        int bugId = bugFixtures.createBug("Баг с двумя вложением", "HIGH");
         attachmentApi.uploadAttachments(bugId, file, file)
                 .then()
                 .statusCode(200);
@@ -368,7 +367,7 @@ class BugApiTest {
         File file = new File("src/test/resources/unsupported.txt");
         assertTrue(file.isFile(), "Не найден файл: " + file.getAbsolutePath());
 
-        int bugId = createBug("Баг с txt вложением", "LOW");
+        int bugId = bugFixtures.createBug("Баг с txt вложением", "LOW");
         attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .log().body()
@@ -388,7 +387,7 @@ class BugApiTest {
     void shouldRejectUnsupportedAttachment() {
         File file = new File("src/test/resources/unsupportedCsv.csv");
         assertTrue(file.isFile(), "Не найден файл: " + file.getAbsolutePath());
-        int bugId = createBug("Баг с недопустимым вложением", "LOW");
+        int bugId = bugFixtures.createBug("Баг с недопустимым вложением", "LOW");
         attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .statusCode(200)
@@ -410,7 +409,7 @@ class BugApiTest {
         File file = new File("src/test/resources/empty.txt");
         assertTrue(file.isFile(), "Не найден файл: " + file.getAbsolutePath());
         assertEquals(0L, file.length(), "Файл должен быть пустым");
-        int bugId = createBug("Баг с пустым txt", "HIGH");
+        int bugId = bugFixtures.createBug("Баг с пустым txt", "HIGH");
         attachmentApi.uploadAttachment(bugId, file)
                 .then()
                 .statusCode(200)
@@ -432,7 +431,7 @@ class BugApiTest {
         assertTrue(unsupported.isFile(),
                    "Не найден файл: " + unsupported.getAbsolutePath());
         assertTrue(unsupported.length() > 0, "CSV не должен быть пустым");
-        int bugId = createBug("Баг с поддерживаем и не поддерживаем файлом", "HIGH");
+        int bugId = bugFixtures.createBug("Баг с поддерживаем и не поддерживаем файлом", "HIGH");
         var response = attachmentApi.uploadAttachments(bugId, image, unsupported)
                 .then()
                 .statusCode(200)
@@ -471,7 +470,7 @@ class BugApiTest {
             assertTrue(file.length() > 0, "CSV не должен быть пустым");
         }
 
-        int bugId = createBug("Баг с недопустимым вложением", "HIGH");
+        int bugId = bugFixtures.createBug("Баг с недопустимым вложением", "HIGH");
 
         var response = attachmentApi.uploadAttachment(bugId, file, contentType)
                 .then()
@@ -493,27 +492,6 @@ class BugApiTest {
     }
 
 
-    private int createBug(String header, String priority) {
-        return bugApi.createBug(header, priority)
-                     .then()
-                     .statusCode(201)
-                     .body("id", greaterThan(0))
-                     .body("header", equalTo(header))
-                     .body("priority", equalTo(priority))
-                     .body("status", equalTo("NEW"))
-                     .extract()
-                     .jsonPath()
-                     .getInt("id");
-    }
-
-    private void changeBugStatus(int bugId, String status) {
-        bugApi.changeBugStatus(bugId, status)
-              .then()
-              .statusCode(200)
-              .body("id", equalTo(bugId))
-              .body("status", equalTo(status));
-    }
-
     static Stream<Arguments> invalidAttachments() {
         return Stream.of(
                 Arguments.of(
@@ -531,14 +509,9 @@ class BugApiTest {
 
     @BeforeEach
     void setUp() {
-        requestSpec = new RequestSpecBuilder()
-                .setBaseUri(TestConfig.baseUrl())
-                .setAccept("application/json")
-                .setConfig(RestAssuredConfig.config()
-                                            .logConfig(LogConfig.logConfig()
-                                                                .enableLoggingOfRequestAndResponseIfValidationFails()))
-                .build();
+        requestSpec = RequestSpecFactory.create();
         bugApi = new BugApi(requestSpec);
         attachmentApi = new AttachmentApi(requestSpec);
+        bugFixtures = new BugFixtures(bugApi);
     }
 }
