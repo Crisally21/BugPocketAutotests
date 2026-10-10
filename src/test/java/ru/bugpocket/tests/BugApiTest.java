@@ -313,12 +313,7 @@ class BugApiTest {
                 .extract()
                 .jsonPath()
                 .getInt("[0].id");
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .pathParam("attachmentId", attachmentId)
-                .when()
-                .delete("/api/bugs/{bugId}/attachments/{attachmentId}")
+        attachmentApi.deleteAttachment(bugId, attachmentId)
                 .then()
                 .statusCode(204);
         attachmentApi.getAttachments(bugId)
@@ -366,12 +361,7 @@ class BugApiTest {
                 .get("/api/bugs/{bugId}/attachments/{attachmentId}/download")
                 .then()
                 .statusCode(404);
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", anotherBugId)
-                .pathParam("attachmentId", attachmentId)
-                .when()
-                .delete("/api/bugs/{bugId}/attachments/{attachmentId}")
+        attachmentApi.deleteAttachment(anotherBugId, attachmentId)
                 .then()
                 .statusCode(404);
         attachmentApi.getAttachments(ownerBugId)

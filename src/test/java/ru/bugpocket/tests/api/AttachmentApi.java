@@ -19,4 +19,13 @@ public class AttachmentApi {
                 .when()
                 .get("/api/bugs/{bugId}/attachments");
     }
+
+    public Response deleteAttachment(int bugId, int attachmentId) {
+        return given()
+                .spec(requestSpecification)
+                .pathParam("bugId", bugId)
+                .pathParam("attachmentId", attachmentId)
+                .when()
+                .delete("/api/bugs/{bugId}/attachments/{attachmentId}");
+    }
 }
