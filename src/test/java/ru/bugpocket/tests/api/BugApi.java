@@ -74,4 +74,13 @@ public class BugApi {
                 .put("/api/bugs/{bugId}");
     }
 
+    public Response createBug(Map<String, Object> body) {
+        return given()
+                .spec(requestSpecification)
+                .contentType("application/json")
+                .body(body)
+                .when()
+                .post("/api/bugs");
+    }
+
 }

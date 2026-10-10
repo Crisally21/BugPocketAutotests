@@ -60,16 +60,7 @@ class BugApiTest {
 
     @Test
     void shouldRejectBugWithoutPriority() {
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .body("""
-                              {
-                              "header": "Не работает кнопка сохранения"
-                              }
-                              """)
-                .when()
-                .post("/api/bugs")
+        bugApi.createBug(Map.of("header", "Не работает кнопка сохранения"))
                 .then()
                 .statusCode(400)
                 .log().body()
