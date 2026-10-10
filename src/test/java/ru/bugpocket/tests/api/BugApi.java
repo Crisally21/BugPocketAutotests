@@ -35,4 +35,18 @@ public class BugApi {
                 .get("/api/bugs/{bugId}");
     }
 
+    public Response changeBugStatus(int bugId, String status) {
+        return given()
+                .spec(requestSpecification)
+                .contentType("application/json")
+                .pathParam("bugId", bugId)
+                .body(
+                        Map.of(
+                                "status", status
+                        )
+                )
+                .when()
+                .patch("/api/bugs/{bugId}/status");
+    }
+
 }

@@ -120,17 +120,8 @@ class BugApiTest {
                 .extract()
                 .jsonPath()
                 .getInt("id");
-        given()
-                .spec(requestSpec)
-                .contentType("application/json")
-                .pathParam("id", bugId)
-                .body("""
-                              {
-                              "status": "IN_PROGRESS"
-                              }
-                              """)
-                .when()
-                .patch("/api/bugs/{id}/status")
+        bugApi.changeBugStatus(bugId, "IN_PROGRESS")
+
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(bugId))
