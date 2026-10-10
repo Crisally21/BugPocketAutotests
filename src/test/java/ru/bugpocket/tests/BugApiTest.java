@@ -276,13 +276,7 @@ class BugApiTest {
                 .jsonPath()
                 .getInt("[0].id");
 
-        byte[] downloadedBytes = given()
-                .spec(requestSpec)
-                .accept("image/png")
-                .pathParam("bugId", bugId)
-                .pathParam("attachmentId", attachmentId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments/{attachmentId}/download")
+        byte[] downloadedBytes = attachmentApi.downloadAttachment(bugId, attachmentId)
                 .then()
                 .statusCode(200)
                 .contentType("image/png")
@@ -320,12 +314,7 @@ class BugApiTest {
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(0));
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", bugId)
-                .pathParam("attachmentId", attachmentId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments/{attachmentId}/download")
+        attachmentApi.downloadAttachment(bugId, attachmentId)
                 .then()
                 .statusCode(404);
 
@@ -353,12 +342,7 @@ class BugApiTest {
                 .extract()
                 .jsonPath()
                 .getInt("[0].id");
-        given()
-                .spec(requestSpec)
-                .pathParam("bugId", anotherBugId)
-                .pathParam("attachmentId", attachmentId)
-                .when()
-                .get("/api/bugs/{bugId}/attachments/{attachmentId}/download")
+        attachmentApi.downloadAttachment(anotherBugId, attachmentId)
                 .then()
                 .statusCode(404);
         attachmentApi.deleteAttachment(anotherBugId, attachmentId)
