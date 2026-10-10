@@ -42,14 +42,11 @@ class BugApiTest {
 
     @Test
     void shouldReturnBugList() {
-        given()
-                .spec(requestSpec)
-                .when()
-                .get("/api/bugs")
-                .then()
-                .statusCode(200)
-                .contentType("application/json")
-                .body("$", instanceOf(List.class));
+        bugApi.getBugs()
+              .then()
+              .statusCode(200)
+              .contentType("application/json")
+              .body("$", instanceOf(List.class));
     }
 
     @Test
@@ -161,22 +158,22 @@ class BugApiTest {
                 .body("expectedResult", equalTo("Изменения успешно сохранены"))
                 .body("status", equalTo("IN_PROGRESS"));
         bugApi.getBugById(bugId)
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(bugId))
-                .body("header", equalTo("Кнопка сохранения выдает ошибку"))
-                .body("priority", equalTo("LOW"))
-                .body("expectedResult", equalTo("Изменения успешно сохранены"))
-                .body("status", equalTo("IN_PROGRESS"));
+              .then()
+              .statusCode(200)
+              .body("id", equalTo(bugId))
+              .body("header", equalTo("Кнопка сохранения выдает ошибку"))
+              .body("priority", equalTo("LOW"))
+              .body("expectedResult", equalTo("Изменения успешно сохранены"))
+              .body("status", equalTo("IN_PROGRESS"));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"", " ", "   ", "\t", "\n"})
     void shouldRejectBlankHeader(String header) {
         bugApi.createBug(header, "HIGH")
-                .then()
-                .statusCode(400)
-                .body("errors.header", notNullValue());
+              .then()
+              .statusCode(400)
+              .body("errors.header", notNullValue());
     }
 
     @ParameterizedTest
@@ -188,8 +185,8 @@ class BugApiTest {
     void shouldValidateHeaderLength(int length, int expectedStatus) {
         String header = "A".repeat(length);
         var response = bugApi.createBug(header, "HIGH")
-                .then()
-                .statusCode(expectedStatus);
+                             .then()
+                             .statusCode(expectedStatus);
         if (expectedStatus == 201) {
             response.body("header", equalTo(header));
         } else {
@@ -202,12 +199,12 @@ class BugApiTest {
     void shouldCreateBugWithEachPriority(Priority priority) {
         String header = "Баг с приоритетом " + priority.name();
         bugApi.createBug(header, priority.name())
-                .then()
-                .statusCode(201)
-                .body("id", greaterThan(0))
-                .body("header", equalTo(header))
-                .body("priority", equalTo(priority.name()))
-                .body("status", equalTo("NEW"));
+              .then()
+              .statusCode(201)
+              .body("id", greaterThan(0))
+              .body("header", equalTo(header))
+              .body("priority", equalTo(priority.name()))
+              .body("status", equalTo("NEW"));
     }
 
     @ParameterizedTest
@@ -253,13 +250,13 @@ class BugApiTest {
     @Test
     void shouldReturnLocationOfCreatedBug() {
         var response = bugApi.createBug("new bug", "HIGH")
-                .then()
-                .statusCode(201)
-                .body("id", greaterThan(0))
-                .body("header", equalTo("new bug"))
-                .body("priority", equalTo("HIGH"))
-                .extract()
-                .response();
+                             .then()
+                             .statusCode(201)
+                             .body("id", greaterThan(0))
+                             .body("header", equalTo("new bug"))
+                             .body("priority", equalTo("HIGH"))
+                             .extract()
+                             .response();
         int bugId = response.jsonPath().getInt("id");
         String location = response.getHeader("Location");
         assertEquals("/api/bugs/" + bugId, location);

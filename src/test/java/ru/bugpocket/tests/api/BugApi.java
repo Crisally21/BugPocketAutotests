@@ -49,4 +49,11 @@ public class BugApi {
                 .patch("/api/bugs/{bugId}/status");
     }
 
+    public Response getBugs() {
+        return given()
+                .spec(requestSpecification)
+                .when()
+                .get("/api/bugs");
+    }
+
 }
