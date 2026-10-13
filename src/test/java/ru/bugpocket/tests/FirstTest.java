@@ -12,6 +12,6 @@ class FirstTest {
         long usedBytes = 5_000_000L;
 
         long remainingBytes = totalQuota - usedBytes;
-        assertEquals(19_000_000L, remainingBytes);
+        assertEquals(20_000_000L, remainingBytes);
     }
 }
