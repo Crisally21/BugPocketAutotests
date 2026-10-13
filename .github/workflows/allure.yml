@@ -1,0 +1,44 @@
+name: Run API tests and publish Allure report
+
+on:
+  push:
+    branches:
+      - master
+      - feat/allure
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Allure CLI
+        run: npm ci
+
+      - name: Run API tests
+        run: mvn -B test
+
+      - name: Publish Allure report
+        if: always()
+        run: npx allure generate target/allure-results
+        env:
+          ALLURE_ACCESS_TOKEN: ${{ secrets.ALLURE_ACCESS_TOKEN }}
