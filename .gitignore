@@ -40,3 +40,4 @@ build/
 .idea/
 .allure/
 node_modules
+allure-report/
