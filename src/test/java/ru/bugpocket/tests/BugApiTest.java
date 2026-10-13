@@ -1,8 +1,17 @@
 package ru.bugpocket.tests;
 
 
+import io.qameta.allure.Allure;
+import io.qameta.allure.Description;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
+import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -24,6 +33,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Feature("Баги")
+@Epic("API автотесты")
 class BugApiTest {
     private RequestSpecification requestSpec;
     private BugApi bugApi;
@@ -47,23 +58,38 @@ class BugApiTest {
     }
 
     @Test
+    @DisplayName("Отказ при создании бага без приоритета")
     void shouldRejectBugWithoutPriority() {
         bugApi.createBug(Map.of("header", "Не работает кнопка сохранения"))
-                .then()
-                .statusCode(400)
-                .log().body()
-                .body("errors.priority", notNullValue());
+              .then()
+              .statusCode(400)
+              .log().body()
+              .body("errors.priority", notNullValue());
     }
 
+    @DisplayName("Создание бага с валидными данными")
+    @Severity(SeverityLevel.CRITICAL)
+    @Story("Успешное создание бага")
     @Test
     void shouldCreateBugWithValidData() {
-        bugApi.createBug("Не работает кнопка сохранения", "HIGH")
-              .then()
-              .statusCode(201)
-              .body("header", equalTo("Не работает кнопка сохранения"))
-              .body("id", greaterThan(0))
-              .body("priority", equalTo("HIGH"))
-              .body("status", equalTo("NEW"));
+        Response response = Allure.step("Создать баг с валидными данными и проверить ответ", () ->
+                bugApi.createBug("Не работает кнопка сохранения", "HIGH")
+        );
+        Allure.step("Проверить данные созданного бага", () -> {
+            Allure.addAttachment(
+                    "Ответ сервера",
+                    "application/json",
+                    response.asPrettyString(),
+                    "json"
+            );
+            response.then()
+                    .statusCode(201)
+                    .body("header", equalTo("Не работает кнопка сохранения"))
+                    .body("id", greaterThan(0))
+                    .body("priority", equalTo("HIGH"))
+                    .body("status", equalTo("NEW"));
+        });
+
     }
 
     @Test
@@ -79,22 +105,39 @@ class BugApiTest {
     }
 
     @Test
+    @Description("Проверяет, что новый статус бага сохраняется и возвращается при повторном запросе")
     void shouldChangeBugStatusToInProgress() {
         int bugId = bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
-        bugApi.changeBugStatus(bugId, "IN_PROGRESS")
-              .then()
-              .statusCode(200)
-              .body("id", equalTo(bugId))
-              .body("status", equalTo("IN_PROGRESS"))
-              .body("header", equalTo("Не работает кнопка сохранения"))
-              .body("priority", equalTo("HIGH"));
-        bugApi.getBugById(bugId)
-              .then()
-              .statusCode(200)
-              .body("id", equalTo(bugId))
-              .body("status", equalTo("IN_PROGRESS"))
-              .body("header", equalTo("Не работает кнопка сохранения"))
-              .body("priority", equalTo("HIGH"));
+        Allure.step(
+                "Изменить статус бага на IN_PROGRESS", () -> bugApi.changeBugStatus(bugId, "IN_PROGRESS")
+                                                                   .then()
+                                                                   .statusCode(200)
+                                                                   .body("id", equalTo(bugId))
+                                                                   .body("status", equalTo("IN_PROGRESS"))
+                                                                   .body("header",
+                                                                         equalTo("Не работает кнопка сохранения"))
+                                                                   .body("priority", equalTo("HIGH"))
+
+        );
+        Response response = Allure.step("Получить баг через GET", () -> bugApi.getBugById(bugId));
+        Allure.step(
+                "Проверить новый статус через GET", () -> {
+                    Allure.addAttachment(
+                            "Состояние бага после изменения",
+                            "application/json",
+                            response.asPrettyString(),
+                            "json"
+                    );
+                    response
+                            .then()
+                            .statusCode(200)
+                            .body("id", equalTo(bugId))
+                            .body("status", equalTo("IN_PROGRESS"))
+                            .body("header",
+                                  equalTo("Не работает кнопка сохранения"))
+                            .body("priority", equalTo("HIGH"));
+                }
+        );
     }
 
     @Test
@@ -118,17 +161,17 @@ class BugApiTest {
         int bugId = bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
         bugFixtures.changeBugStatus(bugId, "IN_PROGRESS");
         bugApi.updateBug(bugId, Map.of(
-                "header", "Кнопка сохранения выдает ошибку",
-                "priority", "LOW",
-                "expectedResult", "Изменения успешно сохранены"
-        ))
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(bugId))
-                .body("header", equalTo("Кнопка сохранения выдает ошибку"))
-                .body("priority", equalTo("LOW"))
-                .body("expectedResult", equalTo("Изменения успешно сохранены"))
-                .body("status", equalTo("IN_PROGRESS"));
+                      "header", "Кнопка сохранения выдает ошибку",
+                      "priority", "LOW",
+                      "expectedResult", "Изменения успешно сохранены"
+              ))
+              .then()
+              .statusCode(200)
+              .body("id", equalTo(bugId))
+              .body("header", equalTo("Кнопка сохранения выдает ошибку"))
+              .body("priority", equalTo("LOW"))
+              .body("expectedResult", equalTo("Изменения успешно сохранены"))
+              .body("status", equalTo("IN_PROGRESS"));
         bugApi.getBugById(bugId)
               .then()
               .statusCode(200)
@@ -184,10 +227,10 @@ class BugApiTest {
     void shouldFilterBugsByPriority(Priority priority) {
         int bugId = bugFixtures.createBug("Новый баг", priority.name());
         bugApi.getBugs(Map.of("priority", priority.name()))
-                .then()
-                .statusCode(200)
-                .body("priority", everyItem(equalTo(priority.name())))
-                .body("id", hasItem(bugId));
+              .then()
+              .statusCode(200)
+              .body("priority", everyItem(equalTo(priority.name())))
+              .body("id", hasItem(bugId));
 
     }
 
@@ -203,11 +246,11 @@ class BugApiTest {
             bugFixtures.changeBugStatus(bugId, status);
         }
         bugApi.getBugs(Map.of("priority", priority, "status", status))
-                .then()
-                .statusCode(200)
-                .body("priority", everyItem(equalTo(priority)))
-                .body("status", everyItem(equalTo(status)))
-                .body("id", hasItem(bugId));
+              .then()
+              .statusCode(200)
+              .body("priority", everyItem(equalTo(priority)))
+              .body("status", everyItem(equalTo(status)))
+              .body("id", hasItem(bugId));
     }
 
     @Test
