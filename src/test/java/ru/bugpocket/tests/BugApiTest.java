@@ -13,6 +13,7 @@ import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -20,6 +21,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import ru.bugpocket.tests.api.BugApi;
 import ru.bugpocket.tests.config.RequestSpecFactory;
 import ru.bugpocket.tests.support.BugFixtures;
+import ru.bugpocket.tests.support.AllureFailureAttachmentExtension;
 
 import java.util.List;
 import java.util.Map;
@@ -35,36 +37,48 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Feature("Баги")
 @Epic("API автотесты")
+@ExtendWith(AllureFailureAttachmentExtension.class)
 class BugApiTest {
     private RequestSpecification requestSpec;
     private BugApi bugApi;
     private BugFixtures bugFixtures;
 
     @Test
+    @DisplayName("Получение списка багов")
+    @Story("Получение багов")
     void shouldReturnBugList() {
-        bugApi.getBugs()
-              .then()
-              .statusCode(200)
-              .contentType("application/json")
-              .body("$", instanceOf(List.class));
+        Allure.step("Получить список багов и проверить ответ", () ->
+                bugApi.getBugs()
+                      .then()
+                      .statusCode(200)
+                      .contentType("application/json")
+                      .body("$", instanceOf(List.class))
+        );
     }
 
     @Test
+    @DisplayName("Отказ при создании бага с пустым заголовком")
+    @Story("Валидация создания бага")
     void shouldValidationCreateBug() {
-        bugApi.createBug("", "HIGH")
-              .then()
-              .statusCode(400)
-              .body("errors.header", notNullValue());
+        Allure.step("Отправить запрос с пустым заголовком и проверить ошибку", () ->
+                bugApi.createBug("", "HIGH")
+                      .then()
+                      .statusCode(400)
+                      .body("errors.header", notNullValue())
+        );
     }
 
     @Test
     @DisplayName("Отказ при создании бага без приоритета")
+    @Story("Валидация создания бага")
     void shouldRejectBugWithoutPriority() {
-        bugApi.createBug(Map.of("header", "Не работает кнопка сохранения"))
-              .then()
-              .statusCode(400)
-              .log().body()
-              .body("errors.priority", notNullValue());
+        Allure.step("Отправить запрос без приоритета и проверить ошибку", () ->
+                bugApi.createBug(Map.of("header", "Не работает кнопка сохранения"))
+                      .then()
+                      .statusCode(400)
+                      .log().body()
+                      .body("errors.priority", notNullValue())
+        );
     }
 
     @DisplayName("Создание бага с валидными данными")
@@ -93,18 +107,25 @@ class BugApiTest {
     }
 
     @Test
+    @DisplayName("Получение созданного бага по идентификатору")
+    @Story("Получение багов")
     void shouldReturnCreatedBugById() {
         int bugId = bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
-        bugApi.getBugById(bugId)
-              .then()
-              .statusCode(200)
-              .body("header", equalTo("Не работает кнопка сохранения"))
-              .body("id", equalTo(bugId))
-              .body("priority", equalTo("HIGH"))
-              .body("status", equalTo("NEW"));
+        Allure.step("Получить созданный баг и проверить его данные", () ->
+                bugApi.getBugById(bugId)
+                      .then()
+                      .statusCode(200)
+                      .body("header", equalTo("Не работает кнопка сохранения"))
+                      .body("id", equalTo(bugId))
+                      .body("priority", equalTo("HIGH"))
+                      .body("status", equalTo("NEW"))
+        );
     }
 
     @Test
+    @DisplayName("Изменение статуса с сохранением нового значения")
+    @Story("Изменение бага")
+    @Severity(SeverityLevel.CRITICAL)
     @Description("Проверяет, что новый статус бага сохраняется и возвращается при повторном запросе")
     void shouldChangeBugStatusToInProgress() {
         int bugId = bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
@@ -141,26 +162,34 @@ class BugApiTest {
     }
 
     @Test
+    @DisplayName("Отказ при неизвестном статусе без изменения бага")
+    @Story("Изменение бага")
     void shouldRejectInvalidStatusAndKeepBugUnchanged() {
         int bugId =
                 bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
-        bugApi.changeBugStatus(bugId, "UNKNOWN")
-              .then()
-              .statusCode(400);
-        bugApi.getBugById(bugId)
-              .then()
-              .statusCode(200)
-              .body("id", equalTo(bugId))
-              .body("status", equalTo("NEW"))
-              .body("header", equalTo("Не работает кнопка сохранения"))
-              .body("priority", equalTo("HIGH"));
+        Allure.step("Отправить неизвестный статус и проверить отказ", () ->
+                bugApi.changeBugStatus(bugId, "UNKNOWN")
+                      .then()
+                      .statusCode(400)
+        );
+        Allure.step("Убедиться, что данные бага не изменились", () ->
+                bugApi.getBugById(bugId)
+                      .then()
+                      .statusCode(200)
+                      .body("id", equalTo(bugId))
+                      .body("status", equalTo("NEW"))
+                      .body("header", equalTo("Не работает кнопка сохранения"))
+                      .body("priority", equalTo("HIGH"))
+        );
     }
 
     @Test
+    @DisplayName("Редактирование полей без изменения статуса")
+    @Story("Изменение бага")
     void shouldUpdateBugFieldAndKeepStatus() {
         int bugId = bugFixtures.createBug("Не работает кнопка сохранения", "HIGH");
         bugFixtures.changeBugStatus(bugId, "IN_PROGRESS");
-        bugApi.updateBug(bugId, Map.of(
+        Allure.step("Обновить поля бага и проверить ответ", () -> bugApi.updateBug(bugId, Map.of(
                       "header", "Кнопка сохранения выдает ошибку",
                       "priority", "LOW",
                       "expectedResult", "Изменения успешно сохранены"
@@ -171,89 +200,114 @@ class BugApiTest {
               .body("header", equalTo("Кнопка сохранения выдает ошибку"))
               .body("priority", equalTo("LOW"))
               .body("expectedResult", equalTo("Изменения успешно сохранены"))
-              .body("status", equalTo("IN_PROGRESS"));
-        bugApi.getBugById(bugId)
-              .then()
-              .statusCode(200)
-              .body("id", equalTo(bugId))
-              .body("header", equalTo("Кнопка сохранения выдает ошибку"))
-              .body("priority", equalTo("LOW"))
-              .body("expectedResult", equalTo("Изменения успешно сохранены"))
-              .body("status", equalTo("IN_PROGRESS"));
+              .body("status", equalTo("IN_PROGRESS")));
+        Allure.step("Проверить обновленные данные повторным GET", () ->
+                bugApi.getBugById(bugId)
+                      .then()
+                      .statusCode(200)
+                      .body("id", equalTo(bugId))
+                      .body("header", equalTo("Кнопка сохранения выдает ошибку"))
+                      .body("priority", equalTo("LOW"))
+                      .body("expectedResult", equalTo("Изменения успешно сохранены"))
+                      .body("status", equalTo("IN_PROGRESS"))
+        );
     }
 
     @ParameterizedTest
+    @DisplayName("Отказ при пустом заголовке")
+    @Story("Валидация создания бага")
     @ValueSource(strings = {"", " ", "   ", "\t", "\n"})
     void shouldRejectBlankHeader(String header) {
-        bugApi.createBug(header, "HIGH")
-              .then()
-              .statusCode(400)
-              .body("errors.header", notNullValue());
+        Allure.step("Проверить отказ для пустого заголовка", () ->
+                bugApi.createBug(header, "HIGH")
+                      .then()
+                      .statusCode(400)
+                      .body("errors.header", notNullValue())
+        );
     }
 
     @ParameterizedTest
+    @DisplayName("Проверка граничной длины заголовка")
+    @Story("Валидация создания бага")
     @CsvSource({
             "199, 201",
             "200, 201",
             "201, 400"
     })
     void shouldValidateHeaderLength(int length, int expectedStatus) {
-        String header = "A".repeat(length);
-        var response = bugApi.createBug(header, "HIGH")
-                             .then()
-                             .statusCode(expectedStatus);
-        if (expectedStatus == 201) {
-            response.body("header", equalTo(header));
-        } else {
-            response.body("errors.header", notNullValue());
-        }
+        Allure.step("Проверить заголовок длиной " + length, () -> {
+            String header = "A".repeat(length);
+            var response = bugApi.createBug(header, "HIGH")
+                                 .then()
+                                 .statusCode(expectedStatus);
+            if (expectedStatus == 201) {
+                response.body("header", equalTo(header));
+            } else {
+                response.body("errors.header", notNullValue());
+            }
+        });
     }
 
     @ParameterizedTest
+    @DisplayName("Создание бага с каждым приоритетом")
+    @Story("Успешное создание бага")
+    @Severity(SeverityLevel.CRITICAL)
     @EnumSource(Priority.class)
     void shouldCreateBugWithEachPriority(Priority priority) {
-        String header = "Баг с приоритетом " + priority.name();
-        bugApi.createBug(header, priority.name())
-              .then()
-              .statusCode(201)
-              .body("id", greaterThan(0))
-              .body("header", equalTo(header))
-              .body("priority", equalTo(priority.name()))
-              .body("status", equalTo("NEW"));
+        Allure.step("Создать баг с приоритетом " + priority.name(), () -> {
+            String header = "Баг с приоритетом " + priority.name();
+            bugApi.createBug(header, priority.name())
+                  .then()
+                  .statusCode(201)
+                  .body("id", greaterThan(0))
+                  .body("header", equalTo(header))
+                  .body("priority", equalTo(priority.name()))
+                  .body("status", equalTo("NEW"));
+        });
     }
 
     @ParameterizedTest
+    @DisplayName("Фильтрация багов по приоритету")
+    @Story("Фильтрация багов")
     @EnumSource(Priority.class)
     void shouldFilterBugsByPriority(Priority priority) {
-        int bugId = bugFixtures.createBug("Новый баг", priority.name());
-        bugApi.getBugs(Map.of("priority", priority.name()))
-              .then()
-              .statusCode(200)
-              .body("priority", everyItem(equalTo(priority.name())))
-              .body("id", hasItem(bugId));
+        Allure.step("Отфильтровать список по приоритету " + priority.name(), () -> {
+            int bugId = bugFixtures.createBug("Новый баг", priority.name());
+            bugApi.getBugs(Map.of("priority", priority.name()))
+                  .then()
+                  .statusCode(200)
+                  .body("priority", everyItem(equalTo(priority.name())))
+                  .body("id", hasItem(bugId));
+        });
 
     }
 
     @ParameterizedTest
+    @DisplayName("Фильтрация багов по приоритету и статусу")
+    @Story("Фильтрация багов")
     @CsvSource({
             "LOW, NEW",
             "MEDIUM, IN_PROGRESS",
             "HIGH, FIXED"
     })
     void shouldFilterBugsByPriorityAndStatus(String priority, String status) {
-        int bugId = bugFixtures.createBug("Баг для проверки двух фильтров", priority);
-        if (!status.equals("NEW")) {
-            bugFixtures.changeBugStatus(bugId, status);
-        }
-        bugApi.getBugs(Map.of("priority", priority, "status", status))
-              .then()
-              .statusCode(200)
-              .body("priority", everyItem(equalTo(priority)))
-              .body("status", everyItem(equalTo(status)))
-              .body("id", hasItem(bugId));
+        Allure.step("Отфильтровать по приоритету " + priority + " и статусу " + status, () -> {
+            int bugId = bugFixtures.createBug("Баг для проверки двух фильтров", priority);
+            if (!status.equals("NEW")) {
+                bugFixtures.changeBugStatus(bugId, status);
+            }
+            bugApi.getBugs(Map.of("priority", priority, "status", status))
+                  .then()
+                  .statusCode(200)
+                  .body("priority", everyItem(equalTo(priority)))
+                  .body("status", everyItem(equalTo(status)))
+                  .body("id", hasItem(bugId));
+        });
     }
 
     @Test
+    @DisplayName("Проверка Location созданного бага")
+    @Story("Успешное создание бага")
     void shouldReturnLocationOfCreatedBug() {
         var response = bugApi.createBug("new bug", "HIGH")
                              .then()
@@ -265,17 +319,19 @@ class BugApiTest {
                              .response();
         int bugId = response.jsonPath().getInt("id");
         String location = response.getHeader("Location");
-        assertEquals("/api/bugs/" + bugId, location);
-        given()
-                .spec(requestSpec)
-                .when()
-                .get(location)
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(bugId))
-                .body("header", equalTo("new bug"))
-                .body("priority", equalTo("HIGH"))
-                .body("status", equalTo("NEW"));
+        Allure.step("Проверить заголовок Location", () -> assertEquals("/api/bugs/" + bugId, location));
+        Allure.step("Перейти по Location и проверить созданный баг", () ->
+                given()
+                        .spec(requestSpec)
+                        .when()
+                        .get(location)
+                        .then()
+                        .statusCode(200)
+                        .body("id", equalTo(bugId))
+                        .body("header", equalTo("new bug"))
+                        .body("priority", equalTo("HIGH"))
+                        .body("status", equalTo("NEW"))
+        );
 
     }
 

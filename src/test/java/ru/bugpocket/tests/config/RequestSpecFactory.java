@@ -4,6 +4,7 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.config.LogConfig;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.specification.RequestSpecification;
+import ru.bugpocket.tests.support.AllureHttpDiagnostics;
 
 public class RequestSpecFactory {
     private RequestSpecFactory() {
@@ -16,6 +17,7 @@ public class RequestSpecFactory {
                 .setConfig(RestAssuredConfig.config()
                                             .logConfig(LogConfig.logConfig()
                                                                 .enableLoggingOfRequestAndResponseIfValidationFails()))
+                .addFilter(AllureHttpDiagnostics.filter())
                 .build();
     }
 }
