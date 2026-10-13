@@ -123,6 +123,17 @@ class BugApiTest {
     }
 
     @Test
+    @DisplayName("404 при запросе несуществующего бага")
+    @Story("Получение багов")
+    void shouldReturn404ForMissingBug() {
+        Allure.step("Запросить баг с несуществующим идентификатором", () ->
+                bugApi.getBugById(Integer.MAX_VALUE)
+                      .then()
+                      .statusCode(404)
+        );
+    }
+
+    @Test
     @DisplayName("Изменение статуса с сохранением нового значения")
     @Story("Изменение бага")
     @Severity(SeverityLevel.CRITICAL)
