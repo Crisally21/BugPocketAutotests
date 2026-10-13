@@ -3,8 +3,7 @@ name: Run API tests and publish Allure report
 on:
   push:
     branches:
-      - master
-      - feat/allure
+      - '**'
   workflow_dispatch:
 
 permissions:
